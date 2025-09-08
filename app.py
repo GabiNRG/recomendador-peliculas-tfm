@@ -48,7 +48,8 @@ def cargar_modelo(model_name=MODEL_NAME):
 # ================================================
 # Consulta a la colección
 # ================================================
-def buscar_peliculas(collection_data, query, model, n_results=3):
+def buscar_peliculas(collection_data, query, model_name=MODEL_NAME, n_results=3):
+    model = cargar_modelo(model_name)
     # Extraer textos
     textos = [m["title"] for m in collection_data["metadatas"]]
     textos_en = [m["title_orig"] for m in collection_data["metadatas"]]
@@ -180,3 +181,4 @@ if query:
 
         respuesta_final = consultar_llm(llm_client, query, recomendaciones)
         st.success(respuesta_final)
+
