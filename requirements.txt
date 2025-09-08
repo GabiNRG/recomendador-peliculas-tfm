@@ -1,9 +1,6 @@
-requests==2.32.3
 pandas==2.2.2
 numpy==2.0.2
 sentence-transformers==5.1.0
-chromadb==1.0.20
 streamlit==1.48.1
-gdown==4.7.1
-py7zr==1.0.0
 groq==0.31.0
+pickl
