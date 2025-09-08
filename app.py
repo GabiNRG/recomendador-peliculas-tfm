@@ -6,6 +6,7 @@
 import streamlit as st
 import pandas as pd
 import chromadb
+from chromadb.config import Settings # Para que funcione en Streamlit CLoud
 from groq import Groq
 import py7zr
 import os
@@ -48,7 +49,14 @@ if not os.path.exists("data"):
 # ================================================
 @st.cache_resource
 def cargar_coleccion(model_name=MODEL_NAME, db_path=DB_PATH, collection_name=COLLECTION_NAME):
-    client_chroma = chromadb.PersistentClient(path=db_path)
+    # client_chroma = chromadb.PersistentClient(path=db_path) # Versión anterior sin Settings y en local
+    client_chroma = chromadb.PersistentClient(
+        path=db_path,
+        settings=Settings(
+            chroma_db_impl="duckdb+parquet", # Para que funcione en Streamlit Cloud
+            persist_directory=db_path
+        )
+    )
     from chromadb.utils import embedding_functions
     emb_fn = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=model_name)
     collection = client_chroma.get_collection(name=collection_name, embedding_function=emb_fn)
