@@ -4,12 +4,11 @@
 # Streamlit App - Recomendador de Películas con ChromaDB + Groq
 # ================================================
 import streamlit as st
+import pickle
+import numpy as np
 import pandas as pd
-import chromadb
+from sentence_transformers import SentenceTransformer
 from groq import Groq
-import py7zr
-import os
-import gdown  # Para descargar desde Google Drive
 
 # ================================================
 # Configuración inicial
@@ -24,75 +23,57 @@ GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 client = Groq(api_key=GROQ_API_KEY)
 
 # Rutas y parámetros
-DB_PATH = "data/peliculas_ebd"
-COLLECTION_NAME = "peliculas"
+DATA_PATH = "data/peliculas_data.pkl"
 MODEL_NAME = "hiiamsid/sentence_similarity_spanish_es"
 LLM_MODEL = "llama-3.1-8b-instant"
-DATA_ARCHIVE = "data/peliculas.7z"
-
-# Google Drive ID del archivo .7z
-GOOGLE_DRIVE_FILE_ID = "https://drive.google.com/file/d/1tKgUHexiw2hnPJsWyL_wdeujAqgBm5-p/view?usp=sharing"
-
-# ================================================
-# Descargar y descomprimir dataset si no existe
-# ================================================
-if not os.path.exists("data"):
-    st.info("📦 Descargando dataset de Google Drive, espera un momento...")
-    gdown.download(f"https://drive.google.com/uc?id={GOOGLE_DRIVE_FILE_ID}", DATA_ARCHIVE, quiet=False)
-    st.info("📦 Descomprimiendo dataset...")
-    with py7zr.SevenZipFile(DATA_ARCHIVE, mode='r') as archive:
-        archive.extractall(path="data")
-    st.success("✅ Dataset descargado y descomprimido correctamente.")
 
 
 # ================================================
-# Cargar colección
+# Cargar colección desde .pkl con embeddings precomputados
 # ================================================
 @st.cache_resource
-def cargar_coleccion(model_name=MODEL_NAME, db_path=DB_PATH, collection_name=COLLECTION_NAME):
-    # client_chroma = chromadb.PersistentClient(path=db_path) # Versión anterior sin Settings y en local
-    from chromadb.config import Settings
-    client_chroma = chromadb.PersistentClient(
-        path=db_path,
-        settings=Settings(
-            chroma_db_impl="duckdb+parquet", # Para que funcione en Streamlit Cloud
-            persist_directory=db_path
-        )
-    )
-    from chromadb.utils import embedding_functions
-    emb_fn = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=model_name)
-    collection = client_chroma.get_collection(name=collection_name, embedding_function=emb_fn)
+def cargar_coleccion(path=DATA_PATH):
+    with open(path, "rb") as f:
+        collection_data = pickle.load(f)
+    return collection_data
 
-    return collection
+# ================================================
+# Cargar modelo SentenceTransformer
+# ================================================
+@st.cache_resource
+def cargar_modelo(model_name=MODEL_NAME):
+    return SentenceTransformer(model_name)
+
 
 # ================================================
 # Consulta a la colección
 # ================================================
-def buscar_peliculas(collection, query, n_results=3):
-    all_data = collection.get()
-    textos = [m["title"] for m in all_data["metadatas"]]
-    textos_en = [m["title_orig"] for m in all_data["metadatas"]]
-
-    if ((query in textos) | (query in textos_en)):
-        if query in textos:
-            idx = textos.index(query) # Si la query coincide con algun titulo de una pelicula, entonces se busca elementos cercanos a dicho elemento:
-        else:
-            idx = textos_en.index(query)
-
-        descripcion_existente = all_data["documents"][idx]
-
-        results = collection.query(
-            query_texts=[descripcion_existente],  # aquí usamos el texto de la pelicula, emb_fn lo vectoriza
-            n_results=n_results
-        )
-
-    else:
-        results = collection.query(query_texts=[query], n_results=n_results)
+def buscar_peliculas(collection_data, query, model, n_results=3):
+    # Extraer textos
+    textos = [m["title"] for m in collection_data["metadatas"]]
+    textos_en = [m["title_orig"] for m in collection_data["metadatas"]]
     
-    for idx, meta in enumerate(results["metadatas"][0]):
-        recomendaciones = (query, results['documents'][0])
-        
-    return recomendaciones, results
+    # Si la query coincide exactamente con un título
+    if query in textos:
+        idx = textos.index(query)
+        query_emb = collection_data["embeddings"][idx]  # usar embedding de la propia película
+    elif query in textos_en:
+        idx = textos_en.index(query)
+        query_emb = collection_data["embeddings"][idx]
+    else:
+        # Si no coincide, generar embedding con el modelo
+        query_emb = model.encode([query])[0]
+
+    # Cálculo de similitud coseno
+    embeddings = np.array(collection_data["embeddings"])
+    similarities = embeddings @ query_emb / (np.linalg.norm(embeddings, axis=1) * np.linalg.norm(query_emb))
+    idxs = np.argsort(-similarities)[:n_results]
+
+    docs = [collection_data["documents"][i] for i in idxs]
+    metas = [collection_data["metadatas"][i] for i in idxs]
+
+    return (query, docs), {"documents": [docs], "metadatas": [metas]}
+
 
 # ================================================
 # Consulta al LLM de Groq
@@ -170,6 +151,7 @@ st.sidebar.write(f"✅ Modelo en uso: **{LLM_MODEL}**")
 
 # Inicializar recursos cacheados
 collection = cargar_coleccion()
+
 llm_client = cargar_cliente_llm(GROQ_API_KEY)
 
 # Caja de texto tipo chat
