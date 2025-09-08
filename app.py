@@ -6,7 +6,6 @@
 import streamlit as st
 import pandas as pd
 import chromadb
-from chromadb.config import Settings # Para que funcione en Streamlit CLoud
 from groq import Groq
 import py7zr
 import os
@@ -19,7 +18,9 @@ st.set_page_config(page_title="🎬 Recomendador de Películas", layout="wide")
 st.title("🎬 Recomendador de Películas con LLM + ChromaDB")
 
 # API Key de Groq
-GROQ_API_KEY = os.environ["GROQ_API_KEY"]
+# GROQ_API_KEY = os.environ["GROQ_API_KEY"]
+# API Key de Groq (segura desde Streamlit Secrets)
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 client = Groq(api_key=GROQ_API_KEY)
 
 # Rutas y parámetros
@@ -50,6 +51,7 @@ if not os.path.exists("data"):
 @st.cache_resource
 def cargar_coleccion(model_name=MODEL_NAME, db_path=DB_PATH, collection_name=COLLECTION_NAME):
     # client_chroma = chromadb.PersistentClient(path=db_path) # Versión anterior sin Settings y en local
+    from chromadb.config import Settings
     client_chroma = chromadb.PersistentClient(
         path=db_path,
         settings=Settings(
