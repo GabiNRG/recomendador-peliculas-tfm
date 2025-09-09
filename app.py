@@ -5,7 +5,7 @@
 # ================================================
 import streamlit as st
 import pickle
-import gzip
+import zipfile
 import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer
@@ -188,6 +188,7 @@ if query:
 
         respuesta_final = consultar_llm(llm_client, query, recomendaciones)
         st.success(respuesta_final)
+
 
 
 
