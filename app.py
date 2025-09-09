@@ -24,7 +24,7 @@ GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 client = Groq(api_key=GROQ_API_KEY)
 
 # Rutas y parámetros
-DATA_PATH = "data/peliculas_data.zip"
+DATA_PATH = "data.zip"
 MODEL_NAME = "hiiamsid/sentence_similarity_spanish_es"
 LLM_MODEL = "llama-3.1-8b-instant"
 
@@ -36,7 +36,6 @@ LLM_MODEL = "llama-3.1-8b-instant"
 def cargar_coleccion(path=DATA_PATH):
     if path.endswith(".zip"):
         with zipfile.ZipFile(path, "r") as zip_ref:
-            # Nombre exacto del archivo dentro del zip
             with zip_ref.open("data/peliculas_data.pkl") as f:
                 collection_data = pickle.load(f)
     else:
@@ -189,6 +188,7 @@ if query:
 
         respuesta_final = consultar_llm(llm_client, query, recomendaciones)
         st.success(respuesta_final)
+
 
 
 
