@@ -24,7 +24,7 @@ GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 client = Groq(api_key=GROQ_API_KEY)
 
 # Rutas y parámetros
-DATA_PATH = "data/peliculas_data.pkl"
+DATA_PATH = "data/peliculas_data.pkl.gz"
 MODEL_NAME = "hiiamsid/sentence_similarity_spanish_es"
 LLM_MODEL = "llama-3.1-8b-instant"
 
@@ -187,3 +187,4 @@ if query:
 
         respuesta_final = consultar_llm(llm_client, query, recomendaciones)
         st.success(respuesta_final)
+
