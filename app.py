@@ -34,11 +34,8 @@ LLM_MODEL = "llama-3.1-8b-instant"
 # ================================================
 @st.cache_resource
 def cargar_coleccion(path=DATA_PATH):
-    if path.endswith(".gz"):
-        with gzip.open(path, "rb") as f:
-            collection_data = pickle.load(f)
-    else:
-        with open(path, "rb") as f:
+    with zipfile.ZipFile(path, "r") as zip_ref:
+        with zip_ref.open("peliculas_data.pkl") as f:  # nombre dentro del zip
             collection_data = pickle.load(f)
     return collection_data
 
@@ -187,6 +184,7 @@ if query:
 
         respuesta_final = consultar_llm(llm_client, query, recomendaciones)
         st.success(respuesta_final)
+
 
 
 
