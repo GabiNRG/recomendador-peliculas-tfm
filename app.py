@@ -5,6 +5,7 @@
 # ================================================
 import streamlit as st
 import pickle
+import gzip
 import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer
@@ -33,9 +34,14 @@ LLM_MODEL = "llama-3.1-8b-instant"
 # ================================================
 @st.cache_resource
 def cargar_coleccion(path=DATA_PATH):
-    with open(path, "rb") as f:
-        collection_data = pickle.load(f)
+    if path.endswith(".gz"):
+        with gzip.open(path, "rb") as f:
+            collection_data = pickle.load(f)
+    else:
+        with open(path, "rb") as f:
+            collection_data = pickle.load(f)
     return collection_data
+
 
 # ================================================
 # Cargar modelo SentenceTransformer
@@ -181,4 +187,3 @@ if query:
 
         respuesta_final = consultar_llm(llm_client, query, recomendaciones)
         st.success(respuesta_final)
-
