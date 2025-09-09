@@ -5,7 +5,7 @@
 # ================================================
 import streamlit as st
 import pickle
-import zipfile
+import gzip
 import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer
@@ -34,8 +34,13 @@ LLM_MODEL = "llama-3.1-8b-instant"
 # ================================================
 @st.cache_resource
 def cargar_coleccion(path=DATA_PATH):
-    with zipfile.ZipFile(path, "r") as zip_ref:
-        with zip_ref.open("peliculas_data.pkl") as f:  # nombre dentro del zip
+    if path.endswith(".zip"):
+        with zipfile.ZipFile(path, "r") as zip_ref:
+            # Nombre exacto del archivo dentro del zip
+            with zip_ref.open("data/peliculas_data.pkl") as f:
+                collection_data = pickle.load(f)
+    else:
+        with open(path, "rb") as f:
             collection_data = pickle.load(f)
     return collection_data
 
@@ -184,6 +189,7 @@ if query:
 
         respuesta_final = consultar_llm(llm_client, query, recomendaciones)
         st.success(respuesta_final)
+
 
 
 
