@@ -3,5 +3,3 @@ numpy==2.0.2
 sentence-transformers==5.1.0
 streamlit==1.48.1
 groq==0.31.0
-pickl
-gzip
