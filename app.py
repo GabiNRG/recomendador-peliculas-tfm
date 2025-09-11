@@ -138,11 +138,11 @@ AVAILABLE_MODELS = [ # Ordenados de mayor a menor tamaño
     "openai/gpt-oss-120b",          # 120B parámetros (el más grande de la lista)
     "llama-3.3-70b-versatile",      # 70B parámetros, versátil
     "deepseek-r1-distill-llama-70b",# 70B distilled, sigue siendo muy potente
-    "llama3-70b-8192",              # 70B parámetros
+    #"llama3-70b-8192",              # 70B parámetros ## Desfasado
     "qwen/qwen3-32b",               # 32B parámetros      # en desuso: "mixtral-8x7b-32768",
     "openai/gpt-oss-20b",           # 20B parámetros
     "gemma2-9b-it",                 # 9B parámetros
-    "llama3-8b-8192",               # 8B parámetros
+    # "llama3-8b-8192",               # 8B parámetros ## Desfasado
     "llama-3.1-8b-instant",         # 8B optimizado para velocidad (menos preciso que el normal)
     "compound-beta-mini"            # Modelo pequeño experimental
 ]
@@ -188,6 +188,7 @@ if query:
 
         respuesta_final = consultar_llm(llm_client, query, recomendaciones)
         st.success(respuesta_final)
+
 
 
 
